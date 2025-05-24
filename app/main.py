@@ -250,9 +250,10 @@ def export_csv(
     vn_tz = pytz.timezone("Asia/Ho_Chi_Minh")
     today = datetime.now(vn_tz).strftime('%Y-%m-%d')
 
-    match_stage = {"user_id": user_obj_id}
     if mode == "today":
-        match_stage["date"] = today
+        match_stage = {"user_id": user_obj_id, "date": today}
+    else:
+        match_stage = {"user_id": user_obj_id}
 
     pipeline = [
         {"$match": match_stage},
