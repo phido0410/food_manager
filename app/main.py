@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Form, Cookie, HTTPException, Response
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-
+from fastapi.responses import FileResponse
 from app.database import meals_col, logs_col, users_col
 from bson import ObjectId
 from datetime import datetime
@@ -93,7 +93,7 @@ def get_current_user_id(user_id: str = Cookie(None)) -> ObjectId:
     return ObjectId(user_id)
 
 # Trang chính
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def home(request: Request, user_id: str = Cookie(None)):
     if not user_id:
         return RedirectResponse("/login", status_code=302)
@@ -162,6 +162,10 @@ async def home(request: Request, user_id: str = Cookie(None)):
         "today": today
     })
 
+# tạo favicon
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("app/static/favicon.ico")
 
 # Các route thêm, sửa, xóa món ăn, ghi nhật ký... giữ nguyên không đổi
 
@@ -173,7 +177,7 @@ async def add_meal(
     carbs: int = Form(...),
     protein: int = Form(...),
     fat: int = Form(...),
-    image_url: str = Form(None)  # Thêm dòng này
+    image_url: str = Form(None)  
 ):
     meals_col.insert_one({
         "name": name,
@@ -181,9 +185,9 @@ async def add_meal(
         "carbs": carbs,
         "protein": protein,
         "fat": fat,
-        "image_url": image_url  # Thêm dòng này
+        "image_url": image_url  
     })
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(url="/?view=meals", status_code=303)
 
 
 @app.post("/log-meal")
@@ -202,7 +206,7 @@ async def log_meal(
         "quantity": quantity,
         "date": date
     })
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(url="/?view=log", status_code=303)
 
 
 @app.post("/edit-meal/{meal_id}")
@@ -213,7 +217,7 @@ async def update_meal(
     carbs: int = Form(...),
     protein: int = Form(...),
     fat: int = Form(...),
-    image_url: str = Form(None)  # Thêm dòng này
+    image_url: str = Form(None)  
 ):
     meals_col.update_one(
         {"_id": ObjectId(meal_id)},
@@ -223,19 +227,35 @@ async def update_meal(
             "carbs": carbs,
             "protein": protein,
             "fat": fat,
-            "image_url": image_url  # Thêm dòng này
+            "image_url": image_url  
         }}
     )
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(url="/?view=meals", status_code=303)
 
 @app.post("/delete-meal/{meal_id}")
 async def delete_meal(meal_id: str):
     meals_col.delete_one({"_id": ObjectId(meal_id)})
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(url="/?view=meals", status_code=303)
 
 @app.get("/export-csv")
-def export_csv():
+def export_csv(
+    request: Request,
+    mode: str = "today",
+    user_id: str = Cookie(None)
+):
+    if not user_id:
+        return RedirectResponse("/login", status_code=302)
+
+    user_obj_id = ObjectId(user_id)
+    vn_tz = pytz.timezone("Asia/Ho_Chi_Minh")
+    today = datetime.now(vn_tz).strftime('%Y-%m-%d')
+
+    match_stage = {"user_id": user_obj_id}
+    if mode == "today":
+        match_stage["date"] = today
+
     pipeline = [
+        {"$match": match_stage},
         {
             "$lookup": {
                 "from": "users",
@@ -263,9 +283,9 @@ def export_csv():
             }
         }
     ]
+
     logs = logs_col.aggregate(pipeline)
 
-    # Sử dụng StringIO để ghi CSV, sau đó encode sang bytes
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Họ tên", "Tên món ăn", "Số lượng", "Ngày"])
@@ -279,10 +299,12 @@ def export_csv():
     csv_content = output.getvalue().encode('utf-8-sig')
     output.close()
 
+    filename = f"log_data_{today}.csv" if mode == "today" else "log_data_all.csv"
+
     return StreamingResponse(
         io.BytesIO(csv_content),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=log_data.csv"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 # Đăng xuất
