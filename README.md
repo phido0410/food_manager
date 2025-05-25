@@ -14,19 +14,25 @@
   <img src="https://img.shields.io/badge/Python-3.8+-blue?logo=python">
   <img src="https://img.shields.io/badge/FastAPI-Framework-0ba360?logo=fastapi">
   <img src="https://img.shields.io/badge/MongoDB-Database-green?logo=mongodb">
+  <img src="https://img.shields.io/badge/TailwindCSS-UI-blue?logo=tailwindcss">
 </p>
 
 ---
 
 ## 🚀 Tính năng
 
-- 👤 Đăng ký / đăng nhập người dùng
+- 👤 Đăng ký / đăng nhập người dùng (có phân quyền `admin` / `user`)
+- 🧠 Phân tích BMR / TDEE dựa theo chiều cao, cân nặng, tuổi, giới tính
 - 🍽️ Quản lý món ăn: thêm, sửa, xoá kèm thông tin dinh dưỡng và hình ảnh
-- 🧾 Ghi nhật ký ăn uống theo ngày
-- 📊 Thống kê calo, protein, carbs, chất béo
-- 📤 Xuất dữ liệu ra `.csv`
-- 🔐 Quản lý phiên đăng nhập bằng cookie
-- 📸 Giao diện hiện đại, dễ dùng
+- 🧾 Ghi nhật ký ăn uống theo ngày, thống kê và phân tích
+- 🧮 Gợi ý món ăn theo chất dinh dưỡng còn thiếu (calories, protein, carbs, fat)
+- 📊 Biểu đồ phân tích bằng Chart.js
+- 📤 Xuất dữ liệu nhật ký ra `.csv` (theo ngày hoặc tất cả)
+- ☁️ Upload ảnh đại diện lên Cloudinary
+- 🔐 Quản lý phiên đăng nhập bằng cookie và mã phiên
+- 🔑 Đặt lại mật khẩu qua email với FastAPI-Mail
+- 👮‍♀️ Admin: quản lý người dùng, khóa tài khoản, theo dõi nhật ký hoạt động và đăng nhập
+- 📸 Giao diện hiện đại bằng TailwindCSS
 
 ---
 
@@ -35,7 +41,9 @@
 ### ✅ Yêu cầu
 
 - Python 3.8+
-- MongoDB
+- MongoDB đã khởi chạy
+- Tài khoản Cloudinary (để upload avatar)
+- SMTP email (ví dụ Gmail để gửi mail đặt lại mật khẩu)
 
 ### 📥 Cài đặt local
 
@@ -45,7 +53,7 @@ cd smartcalories
 pip install -r requirements.txt
 ```
 
-🔔 Đảm bảo MongoDB đã chạy và đã cấu hình các collection: `users_col`, `meals_col`, `logs_col`.
+📌 Tạo file `.env` (nếu cần) để chứa thông tin nhạy cảm (mail, cloudinary, v.v.)
 
 ```bash
 uvicorn main:app --reload
@@ -57,9 +65,11 @@ uvicorn main:app --reload
 
 ## 🧰 Thư viện sử dụng
 
-- `fastapi`, `uvicorn`, `pymongo`
-- `jinja2`, `python-dotenv`, `python-multipart`, `pytz`
-- `passlib[bcrypt]`
+- `fastapi`, `uvicorn`, `pymongo`, `jinja2`, `python-dotenv`
+- `passlib[bcrypt]`, `bcrypt`, `python-multipart`
+- `pytz`, `fastapi-mail`, `httpx`, `cloudinary`
+- `apscheduler` (tự động hóa hoặc gửi thông báo định kỳ)
+- `Chart.js` và `TailwindCSS` (frontend)
 
 ---
 
@@ -68,12 +78,12 @@ uvicorn main:app --reload
 ```
 smartcalories/
 ├── app/
-│   ├── templates/       # Giao diện Jinja2
-│   ├── static/          # Ảnh, CSS, JS
-│   ├── database.py      # Kết nối MongoDB
-│   └── main.py          # FastAPI endpoints
+│   ├── templates/         # HTML sử dụng Jinja2
+│   ├── static/            # Ảnh, CSS, JS, favicon, logo
+│   ├── database.py        # Kết nối MongoDB
+│   └── main.py            # FastAPI endpoints
 ├── assets/
-│   └── demo.png
+│   └── icon.png
 ├── requirements.txt
 └── README.md
 ```
@@ -94,7 +104,7 @@ smartcalories/
 
 ## 📤 Xuất CSV
 
-Chọn **"Xuất CSV"** tại menu để tải dữ liệu khẩu phần dưới dạng `.csv`.
+Chọn **"Xuất CSV"** từ menu, chọn xuất hôm nay hoặc tất cả lịch sử nhật ký ăn uống.
 
 ---
 
