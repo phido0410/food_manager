@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 # Kết nối đến MongoDB
-client = MongoClient("mongodb+srv://pcq3014:bigdata@mealtracker.9ged2qc.mongodb.net/")
+client = MongoClient("mongodb+srv://phido0410:bigdata@mealtracker.9ged2qc.mongodb.net/")
 
 # Lấy database
 db = client["meal_tracker"]
