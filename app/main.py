@@ -244,7 +244,7 @@ def reset_password_form(request: Request, token: str = ""):
     if not info or info["expires"] < datetime.utcnow():
         return templates.TemplateResponse(
             "forgot-password.html",
-            {"request": request, "message": "Liên kết không hợp lệ hoặc đã hết hạn."}
+            {"request": request, "error": "Liên kết không hợp lệ hoặc đã hết hạn."}
         )
     return templates.TemplateResponse("reset-password.html", {"request": request, "token": token})
 
@@ -259,7 +259,7 @@ def reset_password_submit(
     if not info or info["expires"] < datetime.utcnow():
         return templates.TemplateResponse(
             "forgot-password.html",
-            {"request": request, "message": "Liên kết không hợp lệ hoặc đã hết hạn."}
+            {"request": request, "error": "Liên kết không hợp lệ hoặc đã hết hạn."}
         )
     if password != confirm_password:
         return templates.TemplateResponse(
@@ -277,13 +277,13 @@ def reset_password_submit(
     )
 
 conf = ConnectionConfig(
-    MAIL_USERNAME="pcq30012004@gmail.com",
-    MAIL_PASSWORD="gnxc lyya fvuq aokl",
-    MAIL_FROM="pcq30012004@gmail.com",
+    MAIL_USERNAME="smartcalories.vn@gmail.com",
+    MAIL_PASSWORD="zpln zcew qcti koba",
+    MAIL_FROM="smartcalories.vn@gmail.com",
     MAIL_PORT=587,
     MAIL_SERVER="smtp.gmail.com",
-    MAIL_STARTTLS=True,      # Đúng tên biến
-    MAIL_SSL_TLS=False,      # Đúng tên biến
+    MAIL_STARTTLS=True,      
+    MAIL_SSL_TLS=False,     
     USE_CREDENTIALS=True
 )
 
@@ -528,7 +528,6 @@ async def activity_history(user_id: str = Cookie(None)):
     ]
     return JSONResponse(result)
 
-
 def format_vn_datetime(dt_str):
     # dt_str dạng "YYYY-MM-DD HH:MM:SS"
     try:
@@ -544,6 +543,16 @@ def format_vn_datetime(dt_str):
         return dt.strftime("%H:%M %d/%m/%Y")
     except Exception:
         return dt_str
+
+def reset_logs_job():
+    db = meals_col.database
+    db["activity_logs"].delete_many({})
+    db["login_logs"].delete_many({})
+    activities_col.delete_many({}) 
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(reset_logs_job, 'cron', day=1, hour=0, minute=1)
+scheduler.start()
 
 @app.post("/add-meal")
 async def add_meal(
@@ -831,8 +840,7 @@ async def ban_user(
         return JSONResponse({"success": False, "message": "Không tìm thấy user hoặc không thay đổi"})
 
 load_dotenv()
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")   
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
 
 @app.post("/chatbot")
 async def chatbot_endpoint(request: Request):
